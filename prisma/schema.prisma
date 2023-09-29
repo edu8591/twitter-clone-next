@@ -8,17 +8,31 @@ generator client {
 datasource db {
     provider = "mysql"
     url      = env("DATABASE_URL")
+    relationMode = "prisma"
 }
 
-model Example {
-    id        Int      @id @default(autoincrement())
-    name      String
+model Tweet {
+    id        String   @id @default(uuid())
+    userId    String
+    content   String
     createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
 
-    @@index([name])
+    user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+    likes Like[]
+
+    @@index([userId])
 }
 
+model Like {
+    userId  String
+    tweetId String
+    user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+    Tweet   Tweet  @relation(fields: [tweetId], references: [id], onDelete: Cascade)
+
+    @@id([userId, tweetId])
+    @@index([userId])
+    @@index([tweetId])
+}
 // Necessary for Next auth
 model Account {
     id                String  @id @default(cuid())
@@ -56,6 +70,12 @@ model User {
     image         String?
     accounts      Account[]
     sessions      Session[]
+
+    // Non-Next Auth
+    tweets    Tweet[]
+    likes     Like[]
+    followers User[]  @relation(name: "Followers")
+    follows   User[]  @relation(name: "Followers")
 }
 
 model VerificationToken {
